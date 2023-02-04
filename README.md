@@ -66,3 +66,230 @@ Clicks & Other inputs from webpage:
 
 }
 ```
+
+
+
+---
+
+Example board:
+```json
+{
+	"board": {
+		"roundNumber": 1,
+		"width": 8,
+		"height": 8,
+		"cells": [
+			[
+				{
+					"playerId": null
+				},
+				{
+					"playerId": "1"
+				},
+				{
+					"playerId": "0"
+				},
+				{
+					"playerId": "2"
+				},
+				{
+					"playerId": "0"
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": "0"
+				},
+				{
+					"playerId": null
+				}
+			],
+			[
+				{
+					"playerId": null
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": "2"
+				},
+				{
+					"playerId": "2"
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": "1"
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": "0"
+				}
+			],
+			[
+				{
+					"playerId": "1"
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": "2"
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": "1"
+				}
+			],
+			[
+				{
+					"playerId": null
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": "0"
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": "0"
+				}
+			],
+			[
+				{
+					"playerId": "2"
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": "1"
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": "1"
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": null
+				}
+			],
+			[
+				{
+					"playerId": "2"
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": "0"
+				},
+				{
+					"playerId": "0"
+				},
+				{
+					"playerId": "0"
+				},
+				{
+					"playerId": "1"
+				},
+				{
+					"playerId": "1"
+				},
+				{
+					"playerId": null
+				}
+			],
+			[
+				{
+					"playerId": null
+				},
+				{
+					"playerId": "2"
+				},
+				{
+					"playerId": "1"
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": "0"
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": null
+				}
+			],
+			[
+				{
+					"playerId": "0"
+				},
+				{
+					"playerId": "2"
+				},
+				{
+					"playerId": "0"
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": null
+				},
+				{
+					"playerId": null
+				}
+			]
+		],
+		"nextRoundTime": "2023-02-04T20:10:43.109896+00:00"
+	},
+	"type": "board"
+}
+```

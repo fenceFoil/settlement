@@ -24,6 +24,17 @@ Board states:
 
 ```json
 {
+    "type":"playerList",
+    "players": {
+        "0118e439-8418-4004-91da-40c7f6db6c13": {
+            // TODO: Info about the player
+        }
+    }
+}
+```
+
+```json
+{
     "type":"cooldownUpdate",
     "cooldownEndTime":"2020-03-20T14:28:23.382748"
 }

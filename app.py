@@ -1,0 +1,68 @@
+import asyncio
+from dataclasses import dataclass
+import random
+
+from fastapi import FastAPI, WebSocket
+from fastapi.responses import HTMLResponse
+
+app = FastAPI()
+
+boardPlayerIds = []
+
+class Board:
+    # 2 player
+    boardPlayerIds:list[list[str]] = [[]]
+    boardWidth:int = 8
+    boardHeight:int = 8
+
+    roundNumber:int = 0
+
+    def __init__(self):
+        self.boardPlayerIds = [[None for x in range(self.boardHeight)] for y in range(self.boardHeight)]
+
+    def getBoardSendData(self):
+        return {
+            "board": {
+                "roundNumber": self.roundNumber,
+                "width": self.boardWidth,
+                "height": self.boardHeight,
+                "cells": self.boardData
+            }
+        }
+
+    def nextFrame(self):
+        # Just shuffle them all lol
+        self.roundNumber += 1
+        self.boardPlayerIds = [[random.choice("0", "1", "2", None) for x in range(self.boardHeight)] for y in range(self.boardHeight)]
+    
+sessions: list[WebSocket] = []
+board: Board
+shutdownSignal: bool = False
+timePerFrameMs = 2200
+
+@app.on_event("startup")
+async def setup():
+    board = Board()
+    asyncio.create_task(runGameLoop())
+
+def broadcastMessage(type:str, messageData):
+    
+
+async def runGameLoop():
+    while not shutdownSignal:
+        board.nextFrame()
+        broadcastMessage("board", board.getBoardSendData())
+        await asyncio.sleep(timePerFrameMs/1000.0)
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    sessions.append(websocket)
+    try:
+        websocket.send_json(board.getBoardSendData())
+        while True:
+            data = await websocket.receive_text()
+            await websocket.send_text(f"Message text was: {data}")
+    finally:
+        sessions.remove(websocket)
+    

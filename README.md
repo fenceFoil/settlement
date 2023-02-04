@@ -21,3 +21,28 @@ Board states:
     }
 }
 ```
+
+```json
+{
+    "type":"cooldownUpdate",
+    "cooldownEndTime":"2020-03-20T14:28:23.382748"
+}
+```
+
+Clicks & Other inputs from webpage:
+
+```json
+{
+    "type":"addCell",
+    "cellPosition": {
+        "x":1,
+        "y":0
+    }
+}
+```
+
+```json
+{
+    
+}
+```

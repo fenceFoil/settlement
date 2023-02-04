@@ -2,6 +2,7 @@ import asyncio
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import random
+import uuid
 
 from fastapi import FastAPI, WebSocket
 from fastapi.responses import HTMLResponse
@@ -26,10 +27,10 @@ class Board:
     }
 
     def getClearBoard(self):
-        return [[None for x in range(self.boardHeight)] for y in range(self.boardHeight)]
+        return [[{"playerId":None,"age":0} for x in range(self.boardHeight)] for y in range(self.boardHeight)]
 
     def __init__(self):
-        self.boardPlayerIds = self.getClearBoard()
+        self.boardPlayerIds = self.generateTestFrame()
 
     def getBoardSendData(self):
         return {
@@ -44,8 +45,13 @@ class Board:
     def generateTestFrame(self):
         # Just shuffle them all lol
         self.roundNumber += 1
-        self.boardPlayerIds = [
-            [random.choice([{"playerId":None}, {"playerId":random.choice(["0", "1", "2"])}]) for x in range(self.boardHeight)]
+        def getRandomCell():
+            return random.choice([
+                    {"playerId":None,"age":1}, 
+                    {"playerId":random.choice(["0", "1", "2"]),"age":1}
+                ])
+        return [
+                [getRandomCell() for x in range(self.boardWidth)]
             for y in range(self.boardHeight)]
         
     def countNeighbors(self, board, x, y):
@@ -55,13 +61,13 @@ class Board:
                 continue
             if x+dx < 0:
                 continue
-            if x+dx > self.boardWidth:
+            if y+dy > self.boardHeight:
                 continue
-            if x+dx < 0:
+            if y+dy < 0:
                 continue            
             neighbors += 1
         
-    def runGOLRuleOnBoard(self, golRulesString):
+    def runGOLRuleOnBoard(self, gameOfLifeRules):
         # Get copy of old board
         oldBoard = [row[:] for row in self.boardPlayerIds]
         # Calculate new state of board
@@ -69,17 +75,37 @@ class Board:
         for x in range(self.boardWidth):
             for y in range(self.boardHeight):
                 # Count neighbors
-                int numNeighbors = countNeighbors(self, oldBoard, x, y)
-                newBoard[x][y] = {"playerId":None}
+                numNeighbors = self.countNeighbors(oldBoard, x, y)
+                if oldBoard[x][y]['playerId'] == None:
+                    # Cell was dead. Birth time?
+                    if numNeighbors in gameOfLifeRules['b']:
+                        newBoard[x][y] = {"playerId":random.choice(["0", "1", "2"]),"age":0}
+                    else:
+                        # Cell remains dead
+                        newBoard[x][y] = dict(oldBoard[x][y])
+                        newBoard[x][y]['age'] += 1
+                if oldBoard[x][y]['playerId'] != None:
+                    # Cell was alive. Stays alive?
+                    if numNeighbors in gameOfLifeRules['s']:
+                        newBoard[x][y] = dict(oldBoard[x][y]) # copy dict
+                        newBoard[x][y]['age'] += 1
+                    else:
+                        # Cell dies of loneliness
+                        newBoard[x][y] = dict(oldBoard[x][y])
+                        newBoard[x][y]['age'] = 0
+                        newBoard[x][y]['playerId'] = None
 
         self.board = newBoard
 
     def nextFrame(self):
-        return self.generateTestFrame()
+        self.runGOLRuleOnBoard(self.gameOfLifeRules)
     
 class Session:
     ws: WebSocket
     playerId: str
+
+    def __init__(self, ws):
+        self.ws = ws
 
 sessions: list[Session] = []
 board: Board = Board()
@@ -92,9 +118,9 @@ async def setup():
 
 def broadcastMessage(type:str, messageData):
     messageData['type'] = type
-    for ws in sessions:
+    for session in sessions:
         async def doSendOneWSMsg():
-            await ws.send_json(messageData)
+            await session.ws.send_json(messageData)
         asyncio.create_task(doSendOneWSMsg())
 
 def getBoardUpdateData():
@@ -124,5 +150,5 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_text()
             await websocket.send_text(f"Message text was: {data}")
     finally:
-        sessions.remove(websocket)
+        sessions.remove(thisSession)
     

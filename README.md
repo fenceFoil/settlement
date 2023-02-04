@@ -17,8 +17,8 @@ Board states:
         "width": 2,
         "height": 2,
         "cells":[
-            [{"playerId":"0118e439-8418-4004-91da-40c7f6db6c13"},{"playerId":"0118e439-8418-4004-91da-40c7f6db6c13"}],
-            [{"playerId":"0118e439-8418-4004-91da-40c7f6db6c13"},{"playerId":"0118e439-8418-4004-91da-40c7f6db6c13"}]
+            [{"playerId":"0118e439-8418-4004-91da-40c7f6db6c13", "age":2},{"playerId":"0118e439-8418-4004-91da-40c7f6db6c13", "age":2}],
+            [{"playerId":"0118e439-8418-4004-91da-40c7f6db6c13", "age":2},{"playerId":"0118e439-8418-4004-91da-40c7f6db6c13", "age":2}]
         ]
     }
 }
@@ -81,214 +81,278 @@ Example board:
 		"cells": [
 			[
 				{
-					"playerId": null
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": "1"
+					"playerId": "0",
+					"age": 1
 				},
 				{
-					"playerId": "0"
+					"playerId": "0",
+					"age": 1
 				},
 				{
-					"playerId": "2"
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": "0"
+					"playerId": "1",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": "1",
+					"age": 1
 				},
 				{
-					"playerId": "0"
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": "1",
+					"age": 1
 				}
 			],
 			[
 				{
-					"playerId": null
+					"playerId": "0",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": "2",
+					"age": 1
 				},
 				{
-					"playerId": "2"
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": "2"
+					"playerId": "2",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": "1",
+					"age": 1
 				},
 				{
-					"playerId": "1"
+					"playerId": "0",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": "2",
+					"age": 1
 				},
 				{
-					"playerId": "0"
+					"playerId": "1",
+					"age": 1
 				}
 			],
 			[
 				{
-					"playerId": "1"
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": "2",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": "2"
+					"playerId": "0",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": "1"
+					"playerId": "0",
+					"age": 1
 				}
 			],
 			[
 				{
-					"playerId": null
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": "1",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": "1",
+					"age": 1
 				},
 				{
-					"playerId": "0"
+					"playerId": "2",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": "2",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": "2",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": "0"
+					"playerId": "1",
+					"age": 1
 				}
 			],
 			[
 				{
-					"playerId": "2"
+					"playerId": "2",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": "1"
+					"playerId": "2",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": "1",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": "1",
+					"age": 1
 				},
 				{
-					"playerId": "1"
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": "2",
+					"age": 1
 				}
 			],
 			[
 				{
-					"playerId": "2"
+					"playerId": "0",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": "0"
+					"playerId": "1",
+					"age": 1
 				},
 				{
-					"playerId": "0"
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": "0"
+					"playerId": "1",
+					"age": 1
 				},
 				{
-					"playerId": "1"
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": "1"
+					"playerId": "1",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": null,
+					"age": 1
 				}
 			],
 			[
 				{
-					"playerId": null
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": "2"
+					"playerId": "1",
+					"age": 1
 				},
 				{
-					"playerId": "1"
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": "0"
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": "0",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": "2",
+					"age": 1
 				}
 			],
 			[
 				{
-					"playerId": "0"
+					"playerId": "1",
+					"age": 1
 				},
 				{
-					"playerId": "2"
+					"playerId": null,
+					"age": 1
 				},
 				{
-					"playerId": "0"
+					"playerId": "0",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": "0",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": "0",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": "0",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": "2",
+					"age": 1
 				},
 				{
-					"playerId": null
+					"playerId": null,
+					"age": 1
 				}
 			]
 		],
-		"nextRoundTime": "2023-02-04T20:10:43.109896+00:00"
+		"nextRoundTime": "2023-02-04T21:10:08.250279+00:00"
 	},
 	"type": "board"
 }

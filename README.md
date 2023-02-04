@@ -14,6 +14,8 @@ Board states:
     "board": {
         "roundNumber":3,
         "nextRoundTime":"2020-03-20T14:28:23.382748",
+        "width": 2,
+        "height": 2,
         "cells":[
             [{"playerId":"0118e439-8418-4004-91da-40c7f6db6c13"},{"playerId":"0118e439-8418-4004-91da-40c7f6db6c13"}],
             [{"playerId":"0118e439-8418-4004-91da-40c7f6db6c13"},{"playerId":"0118e439-8418-4004-91da-40c7f6db6c13"}]
@@ -30,6 +32,13 @@ Board states:
             // TODO: Info about the player
         }
     }
+}
+```
+
+```json
+{
+    "type":"yourPlayerInfo",
+    "playerId":"0118e439-8418-4004-91da-40c7f6db6c13"
 }
 ```
 
@@ -54,6 +63,6 @@ Clicks & Other inputs from webpage:
 
 ```json
 {
-    
+
 }
 ```

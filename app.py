@@ -31,10 +31,16 @@ class Board:
             }
         }
 
-    def nextFrame(self):
+    def generateTestFrame(self):
         # Just shuffle them all lol
         self.roundNumber += 1
-        self.boardPlayerIds = [[random.choice(["0", "1", "2", None]) for x in range(self.boardHeight)] for y in range(self.boardHeight)]
+        self.boardPlayerIds = [
+            [random.choice([{"playerId":None}, {"playerId":random.choice(["0", "1", "2"])}]) for x in range(self.boardHeight)]
+            for y in range(self.boardHeight)]
+
+    def nextFrame(self):
+        return self.generateTestFrame()
+    
     
 sessions: list[WebSocket] = []
 board: Board = Board()

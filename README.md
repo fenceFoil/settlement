@@ -51,6 +51,8 @@ Board states:
 
 Clicks & Other inputs from webpage:
 
+AddCell: GUI responsible for not letting player click on occupied cell
+
 ```json
 {
     "type":"addCell",

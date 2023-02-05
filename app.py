@@ -21,10 +21,11 @@ class Board:
         'b': [3],
         's': [2, 3]
     }
-    gameOfLifeRules: dict = {
-        'b': [0, 6, 7, 8],
-        's': [2, 3, 4, 5]
-    }
+    #gameOfLifeRules: dict = {
+    #    'b': [0, 6, 7, 8],
+    #    's': [2, 3, 4, 5]
+    #}
+    gameOfLifeRules = CONWAYS_GAME_OF_LIFE_RULES
 
     def getClearBoard(self):
         return [[{"playerId":None,"age":0} for x in range(self.boardWidth)] for y in range(self.boardHeight)]
@@ -97,6 +98,10 @@ class Board:
                         newBoard[x][y] = dict(oldBoard[x][y])
                         newBoard[x][y]['age'] = 0
                         newBoard[x][y]['playerId'] = None
+        # Annotate board with old playerId on each cell
+        for x in range(self.boardWidth):
+            for y in range(self.boardHeight):
+                newBoard[x][y]['lastPlayerId'] = oldBoard[x][y]['playerId']
 
         print(f'Board at frame {self.currFrame}')
         self.printBoardToConsole(newBoard)
@@ -118,6 +123,7 @@ class Board:
 @dataclass
 class Player:
     playerId: str
+    addCellCooldownEndTime: datetime = None
 
 @dataclass
 class Session:
@@ -177,13 +183,14 @@ async def websocket_endpoint(websocket: WebSocket):
 
     await websocket.accept()
     playerId = uuid.uuid4().urn.split(':')[2]
-    thisSession = Session(ws=websocket, player=Player(playerId))
+    player = Player(playerId)
+    thisSession = Session(ws=websocket, player=player)
     sessions.append(thisSession)
-    broadcastPlayersList()
     print("Session connected")
     try:
         thisSession.playerId = playerId
-        await websocket.send_json({"type":"yourPlayerInfo", "playerId":thisSession.playerId})
+        await websocket.send_json({"type":"yourPlayerInfo", "playerId":playerId})
+        broadcastPlayersList()
         msg = getBoardUpdateData()
         msg['type'] = "board"
         await websocket.send_json(msg)
@@ -193,6 +200,10 @@ async def websocket_endpoint(websocket: WebSocket):
             if msgType == 'addCell':
                 # Add cell to board
                 board.setCell(msg['x'], msg['y'], thisSession.playerId)
+                broadcastMessage('board', getBoardUpdateData())
+                # Announce cooldown for clicking to client
+                player.addCellCooldownEndTime = datetime.utcnow()+timedelta(seconds=10)
+                await websocket.send_json({"type":"cooldownUpdate", "cooldownEndTime":player.addCellCooldownEndTime.replace(tzinfo=timezone.utc).isoformat()})
     finally:
         sessions.remove(thisSession)
         broadcastPlayersList()

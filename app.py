@@ -14,8 +14,8 @@ boardPlayerIds = []
 class Board:
     # 2 player
     boardPlayerIds:list[list[str]] = [[]]
-    boardWidth:int = 20
-    boardHeight:int = 20
+    boardWidth:int = 14
+    boardHeight:int = 14
     currFrame:int = 0
     CONWAYS_GAME_OF_LIFE_RULES = {
         'b': [3],
@@ -54,7 +54,7 @@ class Board:
         self.boardPlayerIds = [
                 [getRandomCell() for x in range(self.boardWidth)]
             for y in range(self.boardHeight)]
-        self.printBoardToConsole(self.boardPlayerIds)
+        #self.printBoardToConsole(self.boardPlayerIds)
         
     def countNeighbors(self, board, x, y):
         neighbors = 0
@@ -104,7 +104,7 @@ class Board:
                 newBoard[x][y]['lastPlayerId'] = oldBoard[x][y]['playerId']
 
         print(f'Board at frame {self.currFrame}')
-        self.printBoardToConsole(newBoard)
+        #self.printBoardToConsole(newBoard)
 
         self.boardPlayerIds = newBoard
 
@@ -156,9 +156,9 @@ async def setup():
 def broadcastMessage(type:str, messageData):
     messageData['type'] = type
     for session in sessions:
-        async def doSendOneWSMsg():
+        async def doSendOneWSMsg(session):
             await session.ws.send_json(messageData)
-        asyncio.create_task(doSendOneWSMsg())
+        asyncio.create_task(doSendOneWSMsg(session))
 
 def broadcastPlayersList():
     broadcastMessage('playerList', {'players':[p.playerId for p in getPlayers()]})
@@ -198,6 +198,7 @@ async def websocket_endpoint(websocket: WebSocket):
             msg = await websocket.receive_json()
             msgType = msg['type']
             if msgType == 'addCell':
+                print(msg)
                 # Add cell to board
                 board.setCell(msg['x'], msg['y'], thisSession.playerId)
                 broadcastMessage('board', getBoardUpdateData())

@@ -8,3 +8,4 @@ readerwriterlock
 requests
 hsluv
 pillow
+persian-names

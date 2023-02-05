@@ -1,11 +1,13 @@
 import asyncio
+from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import random
 import uuid
 
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
+from persian_names import fullname_en
 
 app = FastAPI()
 
@@ -14,21 +16,21 @@ boardPlayerIds = []
 class Board:
     # 2 player
     boardPlayerIds:list[list[str]] = [[]]
-    boardWidth:int = 14
+    boardWidth:int = 19
     boardHeight:int = 14
     currFrame:int = 0
     CONWAYS_GAME_OF_LIFE_RULES = {
         'b': [3],
         's': [2, 3]
     }
-    #gameOfLifeRules: dict = {
-    #    'b': [0, 6, 7, 8],
-    #    's': [2, 3, 4, 5]
-    #}
-    gameOfLifeRules = CONWAYS_GAME_OF_LIFE_RULES
+    gameOfLifeRules: dict = {
+        'b': [2],
+        's': []
+    }
+    #gameOfLifeRules = CONWAYS_GAME_OF_LIFE_RULES
 
     def getClearBoard(self):
-        return [[{"playerId":None,"age":0} for x in range(self.boardWidth)] for y in range(self.boardHeight)]
+        return [[{"playerId":None,"age":0} for y in range(self.boardHeight)] for x in range(self.boardWidth)]
 
     def __init__(self):
         self.boardPlayerIds = self.getClearBoard()
@@ -52,8 +54,8 @@ class Board:
                     {"playerId":random.choice(playerIds),"age":1}
                 ])
         self.boardPlayerIds = [
-                [getRandomCell() for x in range(self.boardWidth)]
-            for y in range(self.boardHeight)]
+                [getRandomCell()for y in range(self.boardHeight)] for x in range(self.boardWidth)
+            ]
         #self.printBoardToConsole(self.boardPlayerIds)
         
     def countNeighbors(self, board, x, y):
@@ -67,9 +69,27 @@ class Board:
                 continue
             if y+dy < 0:
                 continue    
+            #print (x+dx)
+            #print (y+dy)
+            #print (f'{x=} {dx=} {y=} {dy=} {len(board)=} {len(board[x+dx])=}')
             if board[x+dx][y+dy]['playerId'] != None:
                 neighbors += 1
         return neighbors
+
+    def getNeighborIds(self, board, x, y):
+        neighborPlayerIds = []
+        for dx, dy in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]:
+            if x+dx >= self.boardWidth:
+                continue
+            if x+dx < 0:
+                continue
+            if y+dy >= self.boardHeight:
+                continue
+            if y+dy < 0:
+                continue    
+            if board[x+dx][y+dy]['playerId'] != None:
+                neighborPlayerIds.append(board[x+dx][y+dy]['playerId'])
+        return Counter(neighborPlayerIds)
         
     def runGOLRuleOnBoard(self, gameOfLifeRules, playerIds):
         # Get copy of old board
@@ -83,7 +103,12 @@ class Board:
                 if oldBoard[x][y]['playerId'] == None:
                     # Cell was dead. Birth time?
                     if numNeighbors in gameOfLifeRules['b']:
-                        newBoard[x][y] = {"playerId":random.choice(playerIds),"age":0}
+                        # Find majority neighbor
+                        neighborIds = self.getNeighborIds(oldBoard, x, y).most_common()
+                        highestNeighborCountNumber = neighborIds[0][1]
+                        tiedHighestNeighbors = [n[0] for n in neighborIds if n]
+                        # If no majority, choose random neighbor from tied pluralities
+                        newBoard[x][y] = {"playerId":random.choice(tiedHighestNeighbors),"age":0}
                     else:
                         # Cell remains dead
                         newBoard[x][y] = dict(oldBoard[x][y])
@@ -104,16 +129,21 @@ class Board:
                 newBoard[x][y]['lastPlayerId'] = oldBoard[x][y]['playerId']
 
         print(f'Board at frame {self.currFrame}')
-        #self.printBoardToConsole(newBoard)
+        self.printBoardToConsole(newBoard)
 
         self.boardPlayerIds = newBoard
 
     def printBoardToConsole(self, boardArray):
         for y in range(self.boardHeight):
-            print (''.join(['*' if (boardArray[x][y]['playerId'] != None) else ' ' for x in range(self.boardWidth)]))
+            #print (''.join(['*' if (boardArray[x][y]['playerId'] != None) else ' ' for x in range(self.boardWidth)]))
             #print ([str(self.countNeighbors(boardArray, x, y)) for x in range(self.boardWidth)])
+            pass
 
     def setCell(self, x, y, playerId):
+        if (x < 0) or (x >= self.boardWidth):
+            return
+        if (y < 0) or (y >= self.boardHeight):
+            return
         self.boardPlayerIds[x][y]['playerId'] = playerId
 
     def nextFrame(self, playerIds):
@@ -130,14 +160,23 @@ class Session:
     ws: WebSocket
     player: Player
 
-sessions: list[Session] = []
-board: Board = Board()
-shutdownSignal: bool = False
-timePerFrameMs = 1000
-numFramesPerGame = 55
-
+playerNames = {'ghost':'AI'}
 def getPlayers():
     return [s.player for s in sessions] + [Player(playerId="ghost")]
+
+sessions: list[Session] = []
+board: Board = Board()
+board.generateTestFrame([p.playerId for p in getPlayers()])
+shutdownSignal: bool = False
+timePerFrameMs = 3000
+numFramesPerGame = 100
+
+def getNewFrameTime():
+    return (datetime.utcnow() + timedelta(milliseconds=timePerFrameMs)).replace(tzinfo=timezone.utc).isoformat()
+
+nextFrameTime = getNewFrameTime()
+
+
 
 def resetBoard():
     global board
@@ -160,18 +199,23 @@ def broadcastMessage(type:str, messageData):
             await session.ws.send_json(messageData)
         asyncio.create_task(doSendOneWSMsg(session))
 
+
 def broadcastPlayersList():
-    broadcastMessage('playerList', {'players':[p.playerId for p in getPlayers()]})
+    for playerId in [p.playerId for p in getPlayers()]:
+        if not playerId in playerNames:
+            playerNames[playerId] = fullname_en('r') # random persian name
+    broadcastMessage('playerList', {'players':[p.playerId for p in getPlayers()],'playerNames':playerNames})
 
 def getBoardUpdateData():
     boardData = board.getBoardSendData()
-    boardData['board']['nextRoundTime'] = (datetime.utcnow() + timedelta(milliseconds=timePerFrameMs)).replace(tzinfo=timezone.utc).isoformat()
+    boardData['board']['nextRoundTime'] = nextFrameTime
     return boardData
 
 async def runGameLoop():
-    global board
+    global board, nextFrameTime
     while not shutdownSignal:
         board.nextFrame([p.playerId for p in getPlayers()])
+        nextFrameTime = getNewFrameTime()
         broadcastMessage('board', getBoardUpdateData())
         if board.currFrame > numFramesPerGame:
             resetBoard()
@@ -200,12 +244,15 @@ async def websocket_endpoint(websocket: WebSocket):
             if msgType == 'addCell':
                 print(msg)
                 # Add cell to board
-                board.setCell(msg['x'], msg['y'], thisSession.playerId)
+                board.setCell(msg['x'], msg['y'], thisSession.player.playerId)
                 broadcastMessage('board', getBoardUpdateData())
                 # Announce cooldown for clicking to client
                 player.addCellCooldownEndTime = datetime.utcnow()+timedelta(seconds=10)
                 await websocket.send_json({"type":"cooldownUpdate", "cooldownEndTime":player.addCellCooldownEndTime.replace(tzinfo=timezone.utc).isoformat()})
+    except WebSocketDisconnect as e:
+        pass # I don't care
     finally:
         sessions.remove(thisSession)
+        print("Session disconnected")
         broadcastPlayersList()
     

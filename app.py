@@ -11,11 +11,13 @@ from persian_names import fullname_en
 
 app = FastAPI()
 
-boardPlayerIds = []
+#@dataclass
+#class Cell:
+
 
 class Board:
     # 2 player
-    boardPlayerIds:list[list[str]] = [[]]
+    boardData:list[list[str]] = [[]]
     boardWidth:int = 19
     boardHeight:int = 14
     currFrame:int = 0
@@ -24,16 +26,16 @@ class Board:
         's': [2, 3]
     }
     gameOfLifeRules: dict = {
-        'b': [2],
-        's': []
+        'b': [3],
+        's': [2, 3]
     }
     #gameOfLifeRules = CONWAYS_GAME_OF_LIFE_RULES
 
+    def __init__(self):
+        self.boardData = self.getClearBoard()
+
     def getClearBoard(self):
         return [[{"playerId":None,"age":0} for y in range(self.boardHeight)] for x in range(self.boardWidth)]
-
-    def __init__(self):
-        self.boardPlayerIds = self.getClearBoard()
 
     def getBoardSendData(self):
         return {
@@ -41,7 +43,7 @@ class Board:
                 "currFrame": self.currFrame,
                 "width": self.boardWidth,
                 "height": self.boardHeight,
-                "cells": self.boardPlayerIds
+                "cells": self.boardData
             }
         }
 
@@ -53,10 +55,10 @@ class Board:
                     {"playerId":None,"age":1}, 
                     {"playerId":random.choice(playerIds),"age":1}
                 ])
-        self.boardPlayerIds = [
+        self.boardData = [
                 [getRandomCell()for y in range(self.boardHeight)] for x in range(self.boardWidth)
             ]
-        #self.printBoardToConsole(self.boardPlayerIds)
+        #self.printBoardToConsole(self.boardData)
         
     def countNeighbors(self, board, x, y):
         neighbors = 0
@@ -68,10 +70,7 @@ class Board:
             if y+dy >= self.boardHeight:
                 continue
             if y+dy < 0:
-                continue    
-            #print (x+dx)
-            #print (y+dy)
-            #print (f'{x=} {dx=} {y=} {dy=} {len(board)=} {len(board[x+dx])=}')
+                continue
             if board[x+dx][y+dy]['playerId'] != None:
                 neighbors += 1
         return neighbors
@@ -90,10 +89,14 @@ class Board:
             if board[x+dx][y+dy]['playerId'] != None:
                 neighborPlayerIds.append(board[x+dx][y+dy]['playerId'])
         return Counter(neighborPlayerIds)
+    
+    def nextFrame(self, playerIds):
+        self.currFrame += 1
+        self.runGOLRuleOnBoard(self.gameOfLifeRules, playerIds)
         
     def runGOLRuleOnBoard(self, gameOfLifeRules, playerIds):
         # Get copy of old board
-        oldBoard = [row[:] for row in self.boardPlayerIds]
+        oldBoard = [row[:] for row in self.boardData]
         # Calculate new state of board
         newBoard = self.getClearBoard()
         for x in range(self.boardWidth):
@@ -131,7 +134,7 @@ class Board:
         print(f'Board at frame {self.currFrame}')
         self.printBoardToConsole(newBoard)
 
-        self.boardPlayerIds = newBoard
+        self.boardData = newBoard
 
     def printBoardToConsole(self, boardArray):
         for y in range(self.boardHeight):
@@ -144,11 +147,7 @@ class Board:
             return
         if (y < 0) or (y >= self.boardHeight):
             return
-        self.boardPlayerIds[x][y]['playerId'] = playerId
-
-    def nextFrame(self, playerIds):
-        self.currFrame += 1
-        self.runGOLRuleOnBoard(self.gameOfLifeRules, playerIds)
+        self.boardData[x][y]['playerId'] = playerId
     
 @dataclass
 class Player:
@@ -233,8 +232,8 @@ async def websocket_endpoint(websocket: WebSocket):
     print("Session connected")
     try:
         thisSession.playerId = playerId
-        await websocket.send_json({"type":"yourPlayerInfo", "playerId":playerId})
         broadcastPlayersList()
+        await websocket.send_json({"type":"yourPlayerInfo", "playerId":playerId})
         msg = getBoardUpdateData()
         msg['type'] = "board"
         await websocket.send_json(msg)

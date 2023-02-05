@@ -14,60 +14,63 @@ boardPlayerIds = []
 class Board:
     # 2 player
     boardPlayerIds:list[list[str]] = [[]]
-    boardWidth:int = 8
-    boardHeight:int = 8
-    roundNumber:int = 0
+    boardWidth:int = 20
+    boardHeight:int = 20
+    currFrame:int = 0
     CONWAYS_GAME_OF_LIFE_RULES = {
         'b': [3],
         's': [2, 3]
     }
     gameOfLifeRules: dict = {
-        'b': [3],
-        's': [2, 3]
+        'b': [0, 6, 7, 8],
+        's': [2, 3, 4, 5]
     }
 
     def getClearBoard(self):
-        return [[{"playerId":None,"age":0} for x in range(self.boardHeight)] for y in range(self.boardHeight)]
+        return [[{"playerId":None,"age":0} for x in range(self.boardWidth)] for y in range(self.boardHeight)]
 
     def __init__(self):
-        self.boardPlayerIds = self.generateTestFrame()
+        self.boardPlayerIds = self.getClearBoard()
 
     def getBoardSendData(self):
         return {
             "board": {
-                "roundNumber": self.roundNumber,
+                "currFrame": self.currFrame,
                 "width": self.boardWidth,
                 "height": self.boardHeight,
                 "cells": self.boardPlayerIds
             }
         }
 
-    def generateTestFrame(self):
+    def generateTestFrame(self, playerIds):
         # Just shuffle them all lol
-        self.roundNumber += 1
+        self.currFrame += 1
         def getRandomCell():
             return random.choice([
                     {"playerId":None,"age":1}, 
-                    {"playerId":random.choice(["0", "1", "2"]),"age":1}
+                    {"playerId":random.choice(playerIds),"age":1}
                 ])
-        return [
+        self.boardPlayerIds = [
                 [getRandomCell() for x in range(self.boardWidth)]
             for y in range(self.boardHeight)]
+        self.printBoardToConsole(self.boardPlayerIds)
         
     def countNeighbors(self, board, x, y):
         neighbors = 0
         for dx, dy in [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]:
-            if x+dx > self.boardWidth:
+            if x+dx >= self.boardWidth:
                 continue
             if x+dx < 0:
                 continue
-            if y+dy > self.boardHeight:
+            if y+dy >= self.boardHeight:
                 continue
             if y+dy < 0:
-                continue            
-            neighbors += 1
+                continue    
+            if board[x+dx][y+dy]['playerId'] != None:
+                neighbors += 1
+        return neighbors
         
-    def runGOLRuleOnBoard(self, gameOfLifeRules):
+    def runGOLRuleOnBoard(self, gameOfLifeRules, playerIds):
         # Get copy of old board
         oldBoard = [row[:] for row in self.boardPlayerIds]
         # Calculate new state of board
@@ -79,7 +82,7 @@ class Board:
                 if oldBoard[x][y]['playerId'] == None:
                     # Cell was dead. Birth time?
                     if numNeighbors in gameOfLifeRules['b']:
-                        newBoard[x][y] = {"playerId":random.choice(["0", "1", "2"]),"age":0}
+                        newBoard[x][y] = {"playerId":random.choice(playerIds),"age":0}
                     else:
                         # Cell remains dead
                         newBoard[x][y] = dict(oldBoard[x][y])
@@ -95,22 +98,50 @@ class Board:
                         newBoard[x][y]['age'] = 0
                         newBoard[x][y]['playerId'] = None
 
-        self.board = newBoard
+        print(f'Board at frame {self.currFrame}')
+        self.printBoardToConsole(newBoard)
 
-    def nextFrame(self):
-        self.runGOLRuleOnBoard(self.gameOfLifeRules)
+        self.boardPlayerIds = newBoard
+
+    def printBoardToConsole(self, boardArray):
+        for y in range(self.boardHeight):
+            print (''.join(['*' if (boardArray[x][y]['playerId'] != None) else ' ' for x in range(self.boardWidth)]))
+            #print ([str(self.countNeighbors(boardArray, x, y)) for x in range(self.boardWidth)])
+
+    def setCell(self, x, y, playerId):
+        self.boardPlayerIds[x][y]['playerId'] = playerId
+
+    def nextFrame(self, playerIds):
+        self.currFrame += 1
+        self.runGOLRuleOnBoard(self.gameOfLifeRules, playerIds)
     
-class Session:
-    ws: WebSocket
+@dataclass
+class Player:
     playerId: str
 
-    def __init__(self, ws):
-        self.ws = ws
+@dataclass
+class Session:
+    ws: WebSocket
+    player: Player
 
 sessions: list[Session] = []
 board: Board = Board()
 shutdownSignal: bool = False
-timePerFrameMs = 2200
+timePerFrameMs = 1000
+numFramesPerGame = 55
+
+def getPlayers():
+    return [s.player for s in sessions] + [Player(playerId="ghost")]
+
+def resetBoard():
+    global board
+    board = Board()
+    board.generateTestFrame([p.playerId for p in getPlayers()])
+    broadcastMessage("board", getBoardUpdateData())
+
+@app.get("/admin/restart")
+async def doRestart():
+    resetBoard()
 
 @app.on_event("startup")
 async def setup():
@@ -123,32 +154,46 @@ def broadcastMessage(type:str, messageData):
             await session.ws.send_json(messageData)
         asyncio.create_task(doSendOneWSMsg())
 
+def broadcastPlayersList():
+    broadcastMessage('playerList', {'players':[p.playerId for p in getPlayers()]})
+
 def getBoardUpdateData():
     boardData = board.getBoardSendData()
     boardData['board']['nextRoundTime'] = (datetime.utcnow() + timedelta(milliseconds=timePerFrameMs)).replace(tzinfo=timezone.utc).isoformat()
     return boardData
 
 async def runGameLoop():
+    global board
     while not shutdownSignal:
-        board.nextFrame()
-        broadcastMessage("board", getBoardUpdateData())
+        board.nextFrame([p.playerId for p in getPlayers()])
+        broadcastMessage('board', getBoardUpdateData())
+        if board.currFrame > numFramesPerGame:
+            resetBoard()
         await asyncio.sleep(timePerFrameMs/1000.0)
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
+    global board
+
     await websocket.accept()
-    thisSession = Session(ws=websocket)
+    playerId = uuid.uuid4().urn.split(':')[2]
+    thisSession = Session(ws=websocket, player=Player(playerId))
     sessions.append(thisSession)
+    broadcastPlayersList()
     print("Session connected")
     try:
-        thisSession.playerId = uuid.uuid4().urn
+        thisSession.playerId = playerId
         await websocket.send_json({"type":"yourPlayerInfo", "playerId":thisSession.playerId})
         msg = getBoardUpdateData()
         msg['type'] = "board"
         await websocket.send_json(msg)
         while True:
-            data = await websocket.receive_text()
-            await websocket.send_text(f"Message text was: {data}")
+            msg = await websocket.receive_json()
+            msgType = msg['type']
+            if msgType == 'addCell':
+                # Add cell to board
+                board.setCell(msg['x'], msg['y'], thisSession.playerId)
     finally:
         sessions.remove(thisSession)
+        broadcastPlayersList()
     

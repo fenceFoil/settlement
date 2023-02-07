@@ -1,11 +1,3 @@
-dataset
 fastapi
-aiofiles
-python-multipart
 uvicorn[standard]
-jinja2
-readerwriterlock
-requests
-hsluv
-pillow
 persian-names

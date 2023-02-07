@@ -8,6 +8,7 @@ import uuid
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from persian_names import fullname_en
 
 app = FastAPI()
@@ -355,3 +356,5 @@ async def websocket_endpoint(websocket: WebSocket):
         print("Session disconnected")
         broadcastPlayersList()
     
+# Must mount static files endpoint last if you don't want the other mounts above to stomp on it
+app.mount("/", StaticFiles(directory="www",html=True), name="static")

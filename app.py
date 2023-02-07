@@ -40,8 +40,8 @@ class Cell:
 class Board:
     # 2 player
     boardData:list[list[str]] = [[]]
-    boardWidth:int = 25
-    boardHeight:int = 16
+    boardWidth:int = 30
+    boardHeight:int = 20
     currFrame:int = 0
     CONWAYS_GAME_OF_LIFE_RULES = {
         'b': [3],
@@ -51,6 +51,7 @@ class Board:
         'b': [2,3,4,5,6],
         's': [0,1,2,3,4,5,6,7,8]
     }
+
     #gameOfLifeRules = CONWAYS_GAME_OF_LIFE_RULES
 
     def __init__(self):
@@ -165,6 +166,17 @@ class Board:
         #self.printBoardToConsole(newBoard)
 
         self.boardData = newBoard
+
+    def splatInNewPlayer(self, playerId):
+        # Choose splat center
+        splatCenterX, splatCenterY = int(random.triangular(2, self.boardWidth-1, self.boardWidth/2)), int(random.triangular(2, self.boardHeight-1, self.boardHeight/2))
+        # Splat some people!
+        for i in range(25):
+            currX = splatCenterX + int(random.triangular(-3,3,0))
+            currX = min(max(0, currX), self.boardWidth-1)
+            currY = splatCenterY + int(random.triangular(-3,3,0))
+            currY = min(max(0, currY), self.boardHeight-1)
+            self.boardData[currX][currY] = Cell(playerId=playerId, age=Cell.GOOD_SOLDIER_AGE)
 
     def runBattleOnBoard(self, gameOfLifeRules, playerIds):
         print('commencing battle')
@@ -297,6 +309,7 @@ async def runGameLoop():
         nextFrameTime = getNewFrameTime()
         if board.currFrame > numFramesPerGame:
             nextFrameTime = (datetime.utcnow() + timedelta(seconds=10)).replace(tzinfo=timezone.utc).isoformat()
+            broadcastMessage('lastBoard', {})
         broadcastMessage('board', getBoardUpdateData())
         if board.currFrame > numFramesPerGame:
             await asyncio.sleep(10)
@@ -317,6 +330,10 @@ async def websocket_endpoint(websocket: WebSocket):
         thisSession.playerId = playerId
         broadcastPlayersList()
         await websocket.send_json({"type":"yourPlayerInfo", "playerId":playerId})
+
+        # Splat player cells onto board
+        board.splatInNewPlayer(playerId)
+
         msg = getBoardUpdateData()
         msg['type'] = "board"
         await websocket.send_json(msg)
